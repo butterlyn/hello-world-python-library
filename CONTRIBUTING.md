@@ -155,7 +155,7 @@ Each installed skill is a symlink into `.venv`, so it follows upgrades on its ow
 
 ### The agent skill
 
-The library's own skill, for people who use it, lives in `skills/hello-world-python-library/`. `SKILL.md` is what an agent reads first; it links to the files in `references/` for details. Update the skill in the same commit as any change to the `hello-world` command, the public API or the install instructions.
+The library's own skill, for people who use it, lives in `skills/hello-world-python-library/`. `SKILL.md` holds only what every use of the skill needs: a table that sends each kind of task to one file in `references/`. Everything else goes in those files, so an agent reads only what its task needs. Update the skill in the same commit as any change to the `hello-world` command, the public API or the install instructions.
 
 Users get the skill from that one folder in three ways:
 
