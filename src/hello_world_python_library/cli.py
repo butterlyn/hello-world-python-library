@@ -1,12 +1,13 @@
 """Command-line interface behind the ``hello-world`` command."""
 
-import argparse
-from collections.abc import Sequence
 from importlib.metadata import PackageNotFoundError, version
+
+import click
 
 from hello_world_python_library import greet
 
 DISTRIBUTION_NAME = "hello-world-python-library"
+PROG_NAME = "hello-world"
 
 
 def installed_version() -> str:
@@ -17,27 +18,37 @@ def installed_version() -> str:
         return "unknown"
 
 
-def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for the ``hello-world`` command."""
-    parser = argparse.ArgumentParser(
-        prog="hello-world",
-        description="Print a friendly greeting.",
-    )
-    parser.add_argument(
-        "--version",
-        action="store_true",
-        help="show the installed version and exit",
-    )
-    return parser
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    """Run the ``hello-world`` command and return its exit code."""
-    args = build_parser().parse_args(argv)
+def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> None:
+    """Print the installed version and exit, if ``--version`` was given."""
+    if not value or ctx.resilient_parsing:
+        return
     # Package metadata is looked up only for --version, so the greeting also works
     # when the package is imported from a source tree that was never installed.
-    if args.version:
-        print(f"hello-world {installed_version()}")
-    else:
-        print(greet())
-    return 0
+    # click.version_option is not used because it fails without metadata.
+    click.echo(f"{PROG_NAME} {installed_version()}")
+    ctx.exit()
+
+
+@click.command(
+    name=PROG_NAME,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+@click.option(
+    "--version",
+    is_flag=True,
+    expose_value=False,
+    is_eager=True,
+    callback=print_version,
+    help="Show the installed version and exit.",
+)
+def hello_world() -> None:
+    """Print a friendly greeting."""
+    click.echo(greet())
+
+
+def main() -> None:
+    """Run the ``hello-world`` command, then exit with its exit code."""
+    # Click would otherwise name the program after sys.argv[0], which gives
+    # "hello-world.exe" on Windows and "python -m hello_world_python_library"
+    # for ``python -m``.
+    hello_world(prog_name=PROG_NAME)

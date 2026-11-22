@@ -5,6 +5,7 @@ from importlib.metadata import PackageNotFoundError, distribution, version
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner, Result
 
 from hello_world_python_library import cli
 
@@ -45,47 +46,63 @@ def installed_console_script() -> Path:
     return Path(launchers[0]).resolve()
 
 
+def invoke(args: list[str]) -> Result:
+    """Run the click command in-process, letting unexpected exceptions propagate."""
+    return CliRunner().invoke(cli.hello_world, args, catch_exceptions=False)
+
+
 def missing_metadata(name: str) -> str:
     raise PackageNotFoundError(name)
 
 
-def test_main_prints_greeting(capsys: pytest.CaptureFixture[str]) -> None:
-    assert cli.main([]) == 0
-    captured = capsys.readouterr()
-    assert captured.out == "Hello World.\n"
-    assert captured.err == ""
+def test_command_prints_greeting() -> None:
+    result = invoke([])
+    assert result.exit_code == 0
+    assert result.stdout == "Hello World.\n"
+    assert result.stderr == ""
 
 
-def test_version_flag_prints_installed_version(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    assert cli.main(["--version"]) == 0
-    assert capsys.readouterr().out == f"hello-world {version(DISTRIBUTION)}\n"
+def test_version_flag_prints_installed_version() -> None:
+    result = invoke(["--version"])
+    assert result.exit_code == 0
+    assert result.stdout == f"hello-world {version(DISTRIBUTION)}\n"
 
 
 def test_greeting_does_not_need_package_metadata(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(cli, "version", missing_metadata)
-    assert cli.main([]) == 0
-    assert capsys.readouterr().out == "Hello World.\n"
+    result = invoke([])
+    assert result.exit_code == 0
+    assert result.stdout == "Hello World.\n"
 
 
 def test_version_is_unknown_without_package_metadata(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(cli, "version", missing_metadata)
-    assert cli.main(["--version"]) == 0
-    assert capsys.readouterr().out == "hello-world unknown\n"
+    result = invoke(["--version"])
+    assert result.exit_code == 0
+    assert result.stdout == "hello-world unknown\n"
 
 
-def test_unknown_argument_exits_with_usage_error(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    with pytest.raises(SystemExit) as exc_info:
-        cli.main(["--unknown"])
-    assert exc_info.value.code == 2
-    assert "unrecognized arguments: --unknown" in capsys.readouterr().err
+@pytest.mark.parametrize("flag", ["-h", "--help"])
+def test_help_flags_describe_the_command(flag: str) -> None:
+    result = invoke([flag])
+    assert result.exit_code == 0
+    assert result.stdout.startswith("Usage: hello-world [OPTIONS]\n")
+    assert "Print a friendly greeting." in result.stdout
+    assert "--version" in result.stdout
+
+
+def test_unknown_option_exits_with_usage_error() -> None:
+    result = invoke(["--unknown"])
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    # Click's exact error wording can change between releases, so check only
+    # that the usage line is shown and the bad option is named.
+    assert result.stderr.startswith("Usage: hello-world [OPTIONS]\n")
+    assert "--unknown" in result.stderr
 
 
 def test_installed_console_script_prints_greeting() -> None:
@@ -96,7 +113,9 @@ def test_installed_console_script_prints_greeting() -> None:
 
 def test_installed_console_script_shows_help() -> None:
     result = run([str(installed_console_script()), "--help"])
-    assert result.stdout.startswith("usage: hello-world")
+    # Click would otherwise name the program after the launcher file, such as
+    # hello-world.exe on Windows; the usage line must always say hello-world.
+    assert result.stdout.startswith("Usage: hello-world [OPTIONS]\n")
     assert "--version" in result.stdout
     assert result.stderr == ""
 
@@ -104,4 +123,12 @@ def test_installed_console_script_shows_help() -> None:
 def test_module_is_runnable_with_python_dash_m() -> None:
     result = run([sys.executable, "-m", "hello_world_python_library"])
     assert result.stdout == "Hello World.\n"
+    assert result.stderr == ""
+
+
+def test_module_help_names_the_command() -> None:
+    # Without an explicit program name, click would print
+    # "Usage: python -m hello_world_python_library".
+    result = run([sys.executable, "-m", "hello_world_python_library", "--help"])
+    assert result.stdout.startswith("Usage: hello-world [OPTIONS]\n")
     assert result.stderr == ""

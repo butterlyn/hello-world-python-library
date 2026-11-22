@@ -40,13 +40,13 @@ $ hello-world
 Hello World.
 
 $ hello-world --help
-usage: hello-world [-h] [--version]
+Usage: hello-world [OPTIONS]
 
-Print a friendly greeting.
+  Print a friendly greeting.
 
-options:
-  -h, --help  show this help message and exit
-  --version   show the installed version and exit
+Options:
+  --version   Show the installed version and exit.
+  -h, --help  Show this message and exit.
 ```
 
 `hello-world --version` prints the version you have installed. You can also run the command as a Python module: `python -m hello_world_python_library`.

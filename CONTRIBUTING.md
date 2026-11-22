@@ -58,7 +58,7 @@ Code map:
 | Path | Contents |
 | --- | --- |
 | `src/hello_world_python_library/__init__.py` | Public API: `GREETING` and `greet()` |
-| `src/hello_world_python_library/cli.py` | The `hello-world` command (argparse); entry point `main()` |
+| `src/hello_world_python_library/cli.py` | The `hello-world` command, built with [click](https://click.palletsprojects.com/) as `hello_world`; entry point `main()` |
 | `src/hello_world_python_library/__main__.py` | Makes `python -m hello_world_python_library` work |
 | `src/hello_world_python_library/py.typed` | Tells type checkers the package ships type hints |
 | `tests/` | The pytest suite, including end-to-end runs of the installed `hello-world` launcher |
