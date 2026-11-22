@@ -1,0 +1,74 @@
+<img src="assets/icon.svg" width="64" height="64" alt="">
+
+# Hello World Python library
+
+A deliberately tiny Python library that installs one command, `hello-world`, which prints a greeting:
+
+```console
+$ hello-world
+Hello World.
+```
+
+It doubles as a small, working example of a modern Python library setup: [uv](https://docs.astral.sh/uv/) for packaging and environments, [pytest](https://docs.pytest.org/) tests run by [tox](https://tox.wiki/) on every maintained Python version, and [Ruff](https://docs.astral.sh/ruff/) linting run through [prek](https://prek.j178.dev/) Git hooks.
+
+## Requirements
+
+Python 3.11 or newer. It is tested on Python 3.11, 3.12, 3.13, 3.14 and 3.15.
+
+## Installation
+
+The library is not on PyPI yet, so install it from a copy of this repository. From the repository folder:
+
+```console
+$ uv tool install .
+```
+
+That installs `hello-world` into uv's tool folder. If your shell then says the command is not found, run `uv tool update-shell` once and open a new terminal; it adds that folder to your `PATH`.
+
+If you use pip instead, `pip install .` works too.
+
+To try the command once without installing anything permanently:
+
+```console
+$ uvx --from . hello-world
+```
+
+## Using the command
+
+```console
+$ hello-world
+Hello World.
+
+$ hello-world --help
+usage: hello-world [-h] [--version]
+
+Print a friendly greeting.
+
+options:
+  -h, --help  show this help message and exit
+  --version   show the installed version and exit
+```
+
+`hello-world --version` prints the version you have installed. You can also run the command as a Python module: `python -m hello_world_python_library`.
+
+## Using it from Python
+
+```python
+from hello_world_python_library import greet
+
+print(greet())  # Hello World.
+```
+
+The package ships type hints, so type checkers such as mypy understand it.
+
+## Contributing
+
+Want to change something? [CONTRIBUTING.md](CONTRIBUTING.md) explains how to set up a development environment, run the tests, and look after the project.
+
+## License
+
+[MIT](LICENSE).
+
+---
+
+Created in [T3 Code](https://t3.codes).

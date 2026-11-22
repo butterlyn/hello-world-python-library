@@ -1,0 +1,22 @@
+requires = ["tox>=4.67.15", "tox-uv>=1.37.9"]
+# One test environment per maintained CPython version, plus the check-only linters.
+env_list = ["py315", "py314", "py313", "py312", "py311", "lint"]
+skip_missing_interpreters = false
+
+[env_run_base]
+description = "Run the unit tests with pytest on {base_python} against the built wheel"
+runner = "uv-venv-lock-runner"
+# Install the built wheel rather than an editable checkout, so the tests cover
+# exactly what users install.
+package = "wheel"
+dependency_groups = ["test"]
+commands = [["pytest", { replace = "posargs", extend = true }]]
+
+[env.lint]
+description = "Check Ruff, file hygiene and uv.lock without modifying any file"
+runner = "uv-venv-lock-runner"
+skip_install = true
+dependency_groups = []
+only_groups = ["lint"]
+# The manual stage holds the check-only variants of the hooks; see prek.toml.
+commands = [["prek", "run", "--all-files", "--stage", "manual"]]

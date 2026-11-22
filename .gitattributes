@@ -1,0 +1,3 @@
+# Normalise line endings so Windows and POSIX contributors produce identical files.
+* text=auto eol=lf
+*.svg text eol=lf
