@@ -29,10 +29,7 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     ctx.exit()
 
 
-@click.command(
-    name=PROG_NAME,
-    context_settings={"help_option_names": ["-h", "--help"]},
-)
+@click.command(name=PROG_NAME)
 @click.option(
     "--version",
     is_flag=True,
@@ -41,6 +38,10 @@ def print_version(ctx: click.Context, param: click.Parameter, value: bool) -> No
     callback=print_version,
     help="Show the installed version and exit.",
 )
+# An explicit help option, rather than context_settings={"help_option_names": ...},
+# because tools that render the help text themselves, such as the Great Docs CLI
+# reference, build a bare click.Context that ignores the command's context_settings.
+@click.help_option("-h", "--help")
 def hello_world() -> None:
     """Print a friendly greeting."""
     click.echo(greet())

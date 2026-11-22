@@ -4,6 +4,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, distribution, version
 from pathlib import Path
 
+import click
 import pytest
 from click.testing import CliRunner, Result
 
@@ -93,6 +94,13 @@ def test_help_flags_describe_the_command(flag: str) -> None:
     assert result.stdout.startswith("Usage: hello-world [OPTIONS]\n")
     assert "Print a friendly greeting." in result.stdout
     assert "--version" in result.stdout
+
+
+def test_help_text_lists_short_flag_without_command_context() -> None:
+    # The Great Docs CLI reference renders the help through a bare click.Context,
+    # which skips the command's context_settings; -h must still be listed.
+    ctx = click.Context(cli.hello_world, info_name="hello-world")
+    assert "-h, --help" in cli.hello_world.get_help(ctx)
 
 
 def test_unknown_option_exits_with_usage_error() -> None:
