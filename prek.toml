@@ -36,3 +36,29 @@ hooks = [
     { id = "uv-lock", stages = ["pre-commit"] },
     { id = "uv-lock", alias = "uv-lock-check", name = "uv lock (check)", args = ["--check"], stages = ["manual"] },
 ]
+
+# Rebuild the documentation site into great-docs/_site/ (Git ignores it) whenever a
+# commit touches something the site is generated from, and block the commit if the
+# build fails. The hook runs Great Docs and Quarto from the locked `docs` dependency
+# group. It has no manual-stage variant, so `tox -e lint` stays light.
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "great-docs-build"
+name = "build the documentation site"
+language = "system"
+entry = "uv run --locked --group docs great-docs build"
+pass_filenames = false
+files = { glob = [
+    "src/**",
+    "docs/**",
+    "assets/**",
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "great-docs.yml",
+    "pyproject.toml",
+    "uv.lock",
+] }
+stages = ["pre-commit"]

@@ -63,11 +63,11 @@ The package ships type hints, so type checkers such as mypy understand it.
 
 ## Contributing
 
-Want to change something? [CONTRIBUTING.md](CONTRIBUTING.md) explains how to set up a development environment, run the tests, and look after the project.
+Want to change something? [CONTRIBUTING.md](https://github.com/butterlyn/hello-world-python-library/blob/main/CONTRIBUTING.md) explains how to set up a development environment, run the tests, and look after the project.
 
 ## License
 
-[MIT](LICENSE).
+[MIT](https://github.com/butterlyn/hello-world-python-library/blob/main/LICENSE).
 
 ---
 
