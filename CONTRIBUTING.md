@@ -12,7 +12,7 @@ How to maintain this library. Written for both humans and AI agents: every step 
 | [Ruff](https://docs.astral.sh/ruff/) | Linting and formatting | `[tool.ruff]` in `pyproject.toml` |
 | [prek](https://prek.j178.dev/) | Git pre-commit hooks: Ruff, file hygiene, lockfile sync, documentation build | `prek.toml` |
 | [Great Docs](https://posit-dev.github.io/great-docs/) + [Quarto](https://quarto.org/) | Generate the documentation site from the README, `CONTRIBUTING.md`, `LICENSE`, the docstrings, the click command and the pages in `docs/` | `great-docs.yml`, `docs/`, the `docs` group in `pyproject.toml` |
-| GitHub Actions | Runs the full check on Linux, macOS and Windows for pushes to `main` and pull requests | `.github/workflows/ci.yml` |
+| GitHub Actions | Runs the full check on Linux, macOS and Windows for pushes to `main` and pull requests; builds the documentation and publishes it to GitHub Pages | `.github/workflows/ci.yml`, `.github/workflows/docs.yml` |
 
 ## Setup
 
@@ -41,7 +41,7 @@ The development environment runs on the lowest supported Python (pinned in `.pyt
 | `uv run prek run --all-files` | **Fix** what the hooks can fix (Ruff fixes and formatting, whitespace, `uv lock`), the same as the commit hook. |
 | `uv run pytest` | Quick test loop on the development Python only. |
 | `uv run hello-world` | Run the command from your checkout. |
-| `uv run --locked --group docs great-docs build` | Build the documentation site into `great-docs/_site/`, the same as the docs hook. |
+| `uv run --locked --group docs great-docs build` | Build the documentation site into `great-docs/_site/`, the same as the docs hook and CI. |
 | `uv run --locked --group docs great-docs preview` | Serve the built site on <http://localhost:3000> and open it in your browser. |
 
 Things to know:
@@ -50,7 +50,7 @@ Things to know:
 - **tox tests the built wheel**, not your source folder. Each run rebuilds and installs the wheel, so the tests also catch packaging mistakes. `uv run pytest` uses an editable install, for speed.
 - **Lint has two modes.** `tox -e lint` runs the check-only hooks (the `manual` stage in `prek.toml`). The commit hook and `prek run` run the fixing hooks (the `pre-commit` stage). Change both variants of a hook together.
 - **prek only sees files Git tracks.** `git add` new files before running `tox -e lint` or `prek run --all-files`.
-- **Commits rebuild the documentation.** If a commit touches `src/`, `docs/`, `assets/`, the README, `CONTRIBUTING.md`, `LICENSE`, `great-docs.yml`, `pyproject.toml` or `uv.lock`, the `great-docs-build` hook builds the whole site (about 20 seconds). A broken page or a failing example stops the commit, and the error is printed above the hook result. The hook runs only at commit time, so `tox -e lint` doesn't need Quarto.
+- **Commits rebuild the documentation.** If a commit touches `src/`, `docs/`, `assets/`, the README, `CONTRIBUTING.md`, `LICENSE`, `great-docs.yml`, `pyproject.toml` or `uv.lock`, the `great-docs-build` hook builds the whole site (about 20 seconds). A broken page or a failing example stops the commit, and the error is printed above the hook result. The hook runs only at commit time, so `tox -e lint` doesn't need Quarto. CI builds the docs in the Docs workflow instead.
 
 ## Making a change
 
@@ -141,7 +141,7 @@ Keep the `uv-pre-commit` revision on the same uv version that you develop with.
 
 ### GitHub Actions versions
 
-The actions in `.github/workflows/ci.yml` are pinned to full commit SHAs, with the tag in a trailing comment. To update one, look up the new tag's commit with `git ls-remote --tags https://github.com/<owner>/<action>`. Then replace both the SHA and the comment, and commit with the `ci:` type.
+The actions in `.github/workflows/ci.yml` and `.github/workflows/docs.yml` are pinned to full commit SHAs, with the tag in a trailing comment. To update one, look up the new tag's commit with `git ls-remote --tags https://github.com/<owner>/<action>`. Then replace both the SHA and the comment, and commit with the `ci:` type.
 
 ### Documentation
 
@@ -160,6 +160,8 @@ The site is generated, so most changes need no docs work:
 - **Settings:** change `great-docs.yml`. `uv run --locked --group docs great-docs config --force` regenerates the file with every option at its default, which removes this project's settings, so copy them back afterwards.
 - **Upgrading Great Docs or Quarto:** `uv lock --upgrade-package great-docs --upgrade-package quarto-cli`, then build the docs. Commit with the `build:` type.
 - **Quarto on Windows:** `quarto-cli` is published only as a source distribution, which downloads Quarto and packs it into a wheel. The `[tool.uv.config-settings-package]` table in `pyproject.toml` shortens setuptools' build folder so Quarto's deepest files stay under Windows' 260-character path limit. Enabling Windows long paths also fixes this. If a build of `quarto-cli` failed before that, uv keeps the half-built folder: run `uv cache clean quarto-cli` and try again.
+
+Publishing: on every push to `main`, the Docs workflow builds the site and deploys it to GitHub Pages at <https://butterlyn.github.io/hello-world-python-library/>. Pull requests only build it. To view a pull request's build, run `uv run --locked --group docs great-docs preview --pr <number> --use-gh`, which downloads the build through your `gh` login. One-time setup: in the repository's **Settings → Pages**, set **Source** to **GitHub Actions**. GitHub Free can publish Pages only from public repositories.
 
 ### The build backend
 

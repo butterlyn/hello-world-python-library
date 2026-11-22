@@ -40,7 +40,8 @@ hooks = [
 # Rebuild the documentation site into great-docs/_site/ (Git ignores it) whenever a
 # commit touches something the site is generated from, and block the commit if the
 # build fails. The hook runs Great Docs and Quarto from the locked `docs` dependency
-# group. It has no manual-stage variant, so `tox -e lint` stays light.
+# group. It has no manual-stage variant: `tox -e lint` stays light, and the Docs
+# workflow builds the site in CI instead.
 [[repos]]
 repo = "local"
 
