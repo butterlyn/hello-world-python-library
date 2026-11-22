@@ -48,6 +48,7 @@ quarto-cli = { "--build-option" = "--bdist-dir=w" }
 dev = [
     { include-group = "lint" },
     { include-group = "test" },
+    "library-skills>=0.0.21",
     "tox>=4.67.15",
     "tox-uv>=1.37.9",
 ]

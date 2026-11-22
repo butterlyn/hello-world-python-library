@@ -14,6 +14,13 @@ wheels/
 .pytest_cache/
 .ruff_cache/
 
+# Agent skills that library-skills installs from the dependencies in .venv
+# (see "Agent skills from dependencies" in CONTRIBUTING.md). The leading slash
+# keeps the rule to the repository root, so .agents/ folders deeper in the tree
+# stay tracked. To commit a hand-written skill here, add a !/.claude/skills/<name>/ line.
+/.agents/skills/*
+/.claude/skills/*
+
 # Great Docs build directory (ephemeral, do not commit)
 great-docs/
 

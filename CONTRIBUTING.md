@@ -11,6 +11,7 @@ How to maintain this library. Written for both humans and AI agents: every step 
 | [pytest](https://docs.pytest.org/) | Unit tests | `[tool.pytest]` in `pyproject.toml` |
 | [Ruff](https://docs.astral.sh/ruff/) | Linting and formatting | `[tool.ruff]` in `pyproject.toml` |
 | [prek](https://prek.j178.dev/) | Git pre-commit hooks: Ruff, file hygiene, lockfile sync, documentation build | `prek.toml` |
+| [Library Skills](https://library-skills.io/) | Installs the agent skills that dependencies bundle, for coding agents | the `dev` group in `pyproject.toml`; installs into `.agents/skills/` and `.claude/skills/` |
 | [Great Docs](https://posit-dev.github.io/great-docs/) + [Quarto](https://quarto.org/) | Generate the documentation site from the README, `CONTRIBUTING.md`, `LICENSE`, the docstrings, the click command and the pages in `docs/` | `great-docs.yml`, `docs/`, the `docs` group in `pyproject.toml` |
 | GitHub Actions | Runs the full check on Linux, macOS and Windows for pushes to `main` and pull requests; builds the documentation and publishes it to GitHub Pages | `.github/workflows/ci.yml`, `.github/workflows/docs.yml` |
 
@@ -23,6 +24,8 @@ How to maintain this library. Written for both humans and AI agents: every step 
    uv sync               # create .venv with the project and all development tools
    uv run prek install   # install the Git pre-commit hook
    ```
+
+3. If you work with a coding agent, install the agent skills that the dependencies bundle. See [Agent skills from dependencies](#agent-skills-from-dependencies).
 
 The development environment runs on the lowest supported Python (pinned in `.python-version`), so code that only works on newer versions fails locally first.
 
@@ -132,6 +135,21 @@ Change dependencies with the uv CLI, not by editing `pyproject.toml` or `uv.lock
 To upgrade every locked version, run `uv lock --upgrade` and then `uv run --locked tox`. Always commit `uv.lock`, using the `build:` type.
 
 The `dev` group includes the `test` and `lint` groups, so `uv sync` installs everything except the `docs` group (see [Setup](#setup)). Each tox environment installs only the group it needs.
+
+### Agent skills from dependencies
+
+Some libraries bundle an [agent skill](https://agentskills.io/) inside their package, at `<package>/.agents/skills/<name>/SKILL.md`. [Library Skills](https://library-skills.io/) finds the skills bundled by this project's direct dependencies, meaning the runtime dependencies and every dependency group. It installs them into `.agents/skills/`, which most coding agents read, and, with `--claude`, into `.claude/skills/`, which Claude Code reads. Both folders are gitignored, so run it once in each checkout, and again after adding or upgrading dependencies.
+
+| Command | What it does |
+| --- | --- |
+| `uv run library-skills scan` | List the skills that direct dependencies bundle. `--all` adds indirect dependencies. |
+| `uv run library-skills --claude` | Pick skills from a menu and install them. Needs an interactive terminal; without one it waits forever. |
+| `uv run library-skills install --claude --yes --skill <name>` | Install one skill without prompts, for scripts and agents. `--yes` on its own installs nothing new, and `--all` also installs the skills of indirect dependencies. |
+| `uv run library-skills list --installed --claude` | Show the installed skills and whether each is up to date. |
+
+An empty `scan` is expected for now: none of the direct dependencies bundles a skill yet. `scan --all` does find one, for Typer, which is only there because library-skills depends on it.
+
+Each installed skill is a symlink into `.venv`, so it follows upgrades on its own. On Windows, creating symlinks needs Developer Mode. Without it, add `--copy`. library-skills treats a copy as hand-written and never overwrites it, so after an upgrade, delete the copied folders from `.agents/skills/` and `.claude/skills/` and install again.
 
 ### Hook versions
 
