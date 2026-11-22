@@ -7,6 +7,7 @@ How to maintain this library. Written for both humans and AI agents: every step 
 | Tool | Job | Configured in |
 | --- | --- | --- |
 | [uv](https://docs.astral.sh/uv/) | Python versions, virtual environment, dependencies, lockfile, builds | `pyproject.toml`, `uv.lock`, `.python-version` |
+| [Hatchling](https://hatch.pypa.io/latest/config/build/) | Build backend: turns the source into the wheel and the source distribution | `[build-system]` and `[tool.hatch.build]` in `pyproject.toml` |
 | [tox](https://tox.wiki/) + [tox-uv](https://github.com/tox-dev/tox-uv) | Runs the tests on every supported Python version, plus lint | `tox.toml` |
 | [pytest](https://docs.pytest.org/) | Unit tests | `[tool.pytest]` in `pyproject.toml` |
 | [Ruff](https://docs.astral.sh/ruff/) | Linting and formatting | `[tool.ruff]` in `pyproject.toml` |
@@ -183,7 +184,12 @@ Publishing: on every push to `main`, the Docs workflow builds the site and deplo
 
 ### The build backend
 
-`uv init` set the `uv_build` range in `[build-system]`. Widen that range only when the project needs a newer build-backend feature. If your uv version falls outside the range, builds still work: uv downloads a matching `uv_build` instead of using its built-in copy.
+[Hatchling](https://hatch.pypa.io/latest/config/build/) builds the wheel and the source distribution. `uv build`, tox and `uv sync` all call it through `[build-system]` in `pyproject.toml`, and its settings are under `[tool.hatch.build]`:
+
+- **The wheel** holds `src/hello_world_python_library/`, which Hatchling finds from the project name.
+- **The source distribution** holds only what `only-include` lists, `src/` and `assets/icon.svg`, plus the files Hatchling always adds: `pyproject.toml`, the README, the license and `.gitignore`. `uv build` builds the wheel from the source distribution, so everything the wheel needs must be in that list. The icon is there so the README renders when the archive is unpacked.
+
+`[build-system]` asks for `hatchling>=1.33.0`, the latest release when the project switched to Hatchling. Each build installs the newest Hatchling that matches, so raise the minimum only when the project needs a newer Hatchling feature.
 
 ### Supported Python versions
 
