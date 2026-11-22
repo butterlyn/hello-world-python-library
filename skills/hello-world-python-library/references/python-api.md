@@ -27,20 +27,14 @@ from hello_world_python_library import greet
 print(greet())  # Hello World.
 ```
 
-Build on it:
+Build on it, and test that code against `GREETING` rather than a copy of the text, so the test still passes if the greeting changes:
 
 ```python
-from hello_world_python_library import greet
+from hello_world_python_library import GREETING, greet
 
 
 def welcome(name: str) -> str:
     return f"{greet()} Welcome, {name}!"
-```
-
-Test such code against `GREETING` rather than a copy of the text, so the test still passes if the greeting changes:
-
-```python
-from hello_world_python_library import GREETING
 
 
 def test_welcome() -> None:
