@@ -590,6 +590,14 @@ logo:
 # ------------
 # Emits a SKILL.md conforming to the Agent Skills spec (https://agentskills.io/)
 # so coding agents can learn the package.
+# Publishes the hand-written skill, with its references/ folder, on the Skills page
+# and under .well-known/agent-skills/, where `npx skills add <site URL>` finds it.
+# Only the `skills` list copies the whole folder: `file`, and the automatic
+# detection of skills/<package-name>/, publish SKILL.md alone.
+skill:
+  skills:
+    - name: hello-world-python-library
+      file: skills/hello-world-python-library/SKILL.md
 # skill:
 #   enabled: true       # Emit a SKILL.md for this package (default: true)
 #   file: null          # Path to a hand-written SKILL.md (overrides auto-generation)

@@ -55,6 +55,7 @@ files = { glob = [
     "src/**",
     "docs/**",
     "assets/**",
+    "skills/**",
     "README.md",
     "CONTRIBUTING.md",
     "LICENSE",
