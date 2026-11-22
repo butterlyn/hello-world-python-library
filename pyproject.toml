@@ -30,12 +30,13 @@ Issues = "https://github.com/butterlyn/hello-world-python-library/issues"
 hello-world = "hello_world_python_library.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.13.9,<0.14.0"]
-build-backend = "uv_build"
+requires = ["hatchling>=1.33.0"]
+build-backend = "hatchling.build"
 
-[tool.uv.build-backend]
-# Ship the README's icon in the source distribution so the README renders when unpacked.
-source-include = ["assets/icon.svg"]
+[tool.hatch.build.targets.sdist]
+# Hatchling also adds pyproject.toml, the README, the license and .gitignore. The icon
+# lets the README render when unpacked.
+only-include = ["src", "assets/icon.svg"]
 
 [tool.uv.config-settings-package]
 # quarto-cli is published only as a source distribution, which downloads Quarto and
