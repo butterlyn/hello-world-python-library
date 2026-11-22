@@ -1,0 +1,73 @@
+---
+title: Examples
+# Re-run the examples on every build, so their output always matches the current code.
+freeze: false
+---
+
+Every example on this page runs while the documentation is built. The output you see is what the current version of the code prints.
+
+```{python}
+#| echo: false
+#| output: asis
+import subprocess
+import sys
+
+
+def console(*args: str) -> None:
+    """Run ``hello-world`` with ``args`` and show it like a terminal session."""
+    result = subprocess.run(
+        [sys.executable, "-m", "hello_world_python_library", *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    command = " ".join(["$ hello-world", *args])
+    output = (result.stdout + result.stderr).rstrip("\n")
+    print(f"```console\n{command}\n{output}\n```\n")
+    print(f"Exit code: `{result.returncode}`\n")
+```
+
+## Print the greeting
+
+```{python}
+#| echo: false
+#| output: asis
+console()
+```
+
+## Show the installed version
+
+```{python}
+#| echo: false
+#| output: asis
+console("--version")
+```
+
+## Get help
+
+`-h` and `--help` do the same thing. The [CLI reference](../reference/cli/index.qmd) lists every option.
+
+```{python}
+#| echo: false
+#| output: asis
+console("--help")
+```
+
+## Pass an option it doesn't know
+
+An unknown option prints the usage line and an error to standard error, and the command exits with code 2.
+
+```{python}
+#| echo: false
+#| output: asis
+console("--unknown")
+```
+
+## Use it from Python
+
+```{python}
+from hello_world_python_library import GREETING, greet
+
+print(greet())
+print(greet() == GREETING)
+```

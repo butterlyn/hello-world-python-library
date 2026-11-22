@@ -10,7 +10,8 @@ How to maintain this library. Written for both humans and AI agents: every step 
 | [tox](https://tox.wiki/) + [tox-uv](https://github.com/tox-dev/tox-uv) | Runs the tests on every supported Python version, plus lint | `tox.toml` |
 | [pytest](https://docs.pytest.org/) | Unit tests | `[tool.pytest]` in `pyproject.toml` |
 | [Ruff](https://docs.astral.sh/ruff/) | Linting and formatting | `[tool.ruff]` in `pyproject.toml` |
-| [prek](https://prek.j178.dev/) | Git pre-commit hooks: Ruff, file hygiene, lockfile sync | `prek.toml` |
+| [prek](https://prek.j178.dev/) | Git pre-commit hooks: Ruff, file hygiene, lockfile sync, documentation build | `prek.toml` |
+| [Great Docs](https://posit-dev.github.io/great-docs/) + [Quarto](https://quarto.org/) | Generate the documentation site from the README, `CONTRIBUTING.md`, `LICENSE`, the docstrings, the click command and the pages in `docs/` | `great-docs.yml`, `docs/`, the `docs` group in `pyproject.toml` |
 | GitHub Actions | Runs the full check on Linux, macOS and Windows for pushes to `main` and pull requests | `.github/workflows/ci.yml` |
 
 ## Setup
@@ -25,6 +26,8 @@ How to maintain this library. Written for both humans and AI agents: every step 
 
 The development environment runs on the lowest supported Python (pinned in `.python-version`), so code that only works on newer versions fails locally first.
 
+`uv sync` leaves out the documentation tools, because they are large: Great Docs pulls in Jupyter, and Quarto is a few hundred MB. The docs commands below add them with `--group docs`. The first time, uv builds Quarto from its PyPI package, which takes about a minute. After that it comes from uv's cache.
+
 ## Key commands
 
 | Command | What it does |
@@ -38,6 +41,8 @@ The development environment runs on the lowest supported Python (pinned in `.pyt
 | `uv run prek run --all-files` | **Fix** what the hooks can fix (Ruff fixes and formatting, whitespace, `uv lock`), the same as the commit hook. |
 | `uv run pytest` | Quick test loop on the development Python only. |
 | `uv run hello-world` | Run the command from your checkout. |
+| `uv run --locked --group docs great-docs build` | Build the documentation site into `great-docs/_site/`, the same as the docs hook. |
+| `uv run --locked --group docs great-docs preview` | Serve the built site on <http://localhost:3000> and open it in your browser. |
 
 Things to know:
 
@@ -45,6 +50,7 @@ Things to know:
 - **tox tests the built wheel**, not your source folder. Each run rebuilds and installs the wheel, so the tests also catch packaging mistakes. `uv run pytest` uses an editable install, for speed.
 - **Lint has two modes.** `tox -e lint` runs the check-only hooks (the `manual` stage in `prek.toml`). The commit hook and `prek run` run the fixing hooks (the `pre-commit` stage). Change both variants of a hook together.
 - **prek only sees files Git tracks.** `git add` new files before running `tox -e lint` or `prek run --all-files`.
+- **Commits rebuild the documentation.** If a commit touches `src/`, `docs/`, `assets/`, the README, `CONTRIBUTING.md`, `LICENSE`, `great-docs.yml`, `pyproject.toml` or `uv.lock`, the `great-docs-build` hook builds the whole site (about 20 seconds). A broken page or a failing example stops the commit, and the error is printed above the hook result. The hook runs only at commit time, so `tox -e lint` doesn't need Quarto.
 
 ## Making a change
 
@@ -62,6 +68,8 @@ Code map:
 | `src/hello_world_python_library/__main__.py` | Makes `python -m hello_world_python_library` work |
 | `src/hello_world_python_library/py.typed` | Tells type checkers the package ships type hints |
 | `tests/` | The pytest suite, including end-to-end runs of the installed `hello-world` launcher |
+| `docs/` | Hand-written documentation pages (Quarto `.qmd` files), shown under "User Guide" on the site |
+| `great-docs.yml` | Great Docs settings. Every option is listed with its default; the uncommented lines are the ones this project changes |
 
 The `hello-world` command is registered under `[project.scripts]` in `pyproject.toml`.
 
@@ -118,11 +126,12 @@ Change dependencies with the uv CLI, not by editing `pyproject.toml` or `uv.lock
 | Runtime (installed for users) | `uv add <pkg>` | `uv remove <pkg>` |
 | Test-only | `uv add --group test <pkg>` | `uv remove --group test <pkg>` |
 | Lint-only | `uv add --group lint <pkg>` | `uv remove --group lint <pkg>` |
+| Documentation build | `uv add --group docs <pkg>` | `uv remove --group docs <pkg>` |
 | Other development tools | `uv add --dev <pkg>` | `uv remove --dev <pkg>` |
 
 To upgrade every locked version, run `uv lock --upgrade` and then `uv run --locked tox`. Always commit `uv.lock`, using the `build:` type.
 
-The `dev` group includes the `test` and `lint` groups, so `uv sync` installs everything. Each tox environment installs only the group it needs.
+The `dev` group includes the `test` and `lint` groups, so `uv sync` installs everything except the `docs` group (see [Setup](#setup)). Each tox environment installs only the group it needs.
 
 ### Hook versions
 
@@ -133,6 +142,24 @@ Keep the `uv-pre-commit` revision on the same uv version that you develop with.
 ### GitHub Actions versions
 
 The actions in `.github/workflows/ci.yml` are pinned to full commit SHAs, with the tag in a trailing comment. To update one, look up the new tag's commit with `git ls-remote --tags https://github.com/<owner>/<action>`. Then replace both the SHA and the comment, and commit with the `ci:` type.
+
+### Documentation
+
+The site is generated, so most changes need no docs work:
+
+| Page on the site | Generated from |
+| --- | --- |
+| Home | `README.md` |
+| User Guide | the `.qmd` and `.md` files in `docs/` |
+| Reference: API | the names in `__all__` and their docstrings |
+| Reference: CLI | the click command `hello_world` in `cli.py`, through its `--help` text |
+| Contributing, License | `CONTRIBUTING.md`, `LICENSE` |
+
+- **Adding a page:** add a Quarto `.qmd` file to `docs/`. Python code cells run during the build. `docs/examples.qmd` uses them to show what the command really prints, and sets `freeze: false` so the output is fresh on every build.
+- **Links in the README:** use absolute GitHub URLs for other files in the repository, such as `CONTRIBUTING.md`. The README is also the site's homepage, where relative links to repository files lead nowhere.
+- **Settings:** change `great-docs.yml`. `uv run --locked --group docs great-docs config --force` regenerates the file with every option at its default, which removes this project's settings, so copy them back afterwards.
+- **Upgrading Great Docs or Quarto:** `uv lock --upgrade-package great-docs --upgrade-package quarto-cli`, then build the docs. Commit with the `build:` type.
+- **Quarto on Windows:** `quarto-cli` is published only as a source distribution, which downloads Quarto and packs it into a wheel. The `[tool.uv.config-settings-package]` table in `pyproject.toml` shortens setuptools' build folder so Quarto's deepest files stay under Windows' 260-character path limit. Enabling Windows long paths also fixes this. If a build of `quarto-cli` failed before that, uv keeps the half-built folder: run `uv cache clean quarto-cli` and try again.
 
 ### The build backend
 
@@ -164,4 +191,4 @@ Dropping an end-of-life version (3.11 as the example):
 3. Commit with `chore(release): <new version>`.
 4. `uv build` writes the source distribution and wheel to `dist/`.
 
-Publishing to PyPI is not set up yet. Before the first upload, change the README's icon to an absolute URL, because PyPI cannot display images referenced by a relative path. Then publish with `uv publish`.
+Publishing to PyPI is not set up yet. Before the first upload, change the README's icon to an absolute URL, because PyPI cannot display images referenced by a relative path. Then publish with `uv publish`, and delete `pypi: false` from `great-docs.yml` so the documentation links to the PyPI page.

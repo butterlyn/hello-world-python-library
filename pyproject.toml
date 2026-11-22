@@ -21,6 +21,11 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+[project.urls]
+Documentation = "https://butterlyn.github.io/hello-world-python-library/"
+Repository = "https://github.com/butterlyn/hello-world-python-library"
+Issues = "https://github.com/butterlyn/hello-world-python-library/issues"
+
 [project.scripts]
 hello-world = "hello_world_python_library.cli:main"
 
@@ -32,12 +37,23 @@ build-backend = "uv_build"
 # Ship the README's icon in the source distribution so the README renders when unpacked.
 source-include = ["assets/icon.svg"]
 
+[tool.uv.config-settings-package]
+# quarto-cli is published only as a source distribution, which downloads Quarto and
+# packs it into a wheel. Setuptools' default bdist directory (build/bdist.<platform>/wheel)
+# pushes Quarto's deepest files past Windows' 260-character path limit; a one-letter
+# bdist directory keeps them under it. The option is harmless on Linux and macOS.
+quarto-cli = { "--build-option" = "--bdist-dir=w" }
+
 [dependency-groups]
 dev = [
     { include-group = "lint" },
     { include-group = "test" },
     "tox>=4.67.15",
     "tox-uv>=1.37.9",
+]
+docs = [
+    "great-docs>=0.17.0",
+    "quarto-cli>=1.11.9",
 ]
 lint = [
     "prek>=0.5.11",
