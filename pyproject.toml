@@ -34,9 +34,26 @@ requires = ["hatchling>=1.33.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.sdist]
-# Hatchling also adds pyproject.toml, the README, the license and .gitignore. The icon
-# lets the README render when unpacked.
-only-include = ["src", "assets/icon.svg"]
+# Hatchling also adds pyproject.toml, the README, the license and .gitignore. The wheel
+# is built from the source distribution, so it needs skills/; the icon lets the README
+# render when unpacked.
+only-include = ["src", "skills", "assets/icon.svg"]
+
+[tool.hatch.build.targets.wheel.force-include]
+# Ship the agent skill in the wheel where library-skills looks for skills in installed
+# packages: <package>/.agents/skills/<name>/SKILL.md.
+"skills" = "hello_world_python_library/.agents/skills"
+
+[tool.uv]
+# The editable install that `uv sync` makes copies skills/ into .venv instead of
+# linking it, because the skill sits outside the package folder. Reinstall the project
+# whenever a file in skills/ changes, so `uv run pytest` checks the current skill.
+# The first two keys keep uv's defaults (it also watches setup.py and setup.cfg).
+cache-keys = [
+    { file = "pyproject.toml" },
+    { dir = "src" },
+    { file = "skills/**/*" },
+]
 
 [tool.uv.config-settings-package]
 # quarto-cli is published only as a source distribution, which downloads Quarto and
@@ -62,6 +79,7 @@ lint = [
 ]
 test = [
     "pytest>=9.2.0",
+    "pyyaml>=6.0.4",
 ]
 
 [tool.pytest]

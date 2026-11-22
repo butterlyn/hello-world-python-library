@@ -54,7 +54,7 @@ Things to know:
 - **tox tests the built wheel**, not your source folder. Each run rebuilds and installs the wheel, so the tests also catch packaging mistakes. `uv run pytest` uses an editable install, for speed.
 - **Lint has two modes.** `tox -e lint` runs the check-only hooks (the `manual` stage in `prek.toml`). The commit hook and `prek run` run the fixing hooks (the `pre-commit` stage). Change both variants of a hook together.
 - **prek only sees files Git tracks.** `git add` new files before running `tox -e lint` or `prek run --all-files`.
-- **Commits rebuild the documentation.** If a commit touches `src/`, `docs/`, `assets/`, the README, `CONTRIBUTING.md`, `LICENSE`, `great-docs.yml`, `pyproject.toml` or `uv.lock`, the `great-docs-build` hook builds the whole site (about 20 seconds). A broken page or a failing example stops the commit, and the error is printed above the hook result. The hook runs only at commit time, so `tox -e lint` doesn't need Quarto. CI builds the docs in the Docs workflow instead.
+- **Commits rebuild the documentation.** If a commit touches `src/`, `docs/`, `assets/`, `skills/`, the README, `CONTRIBUTING.md`, `LICENSE`, `great-docs.yml`, `pyproject.toml` or `uv.lock`, the `great-docs-build` hook builds the whole site (about 20 seconds). A broken page or a failing example stops the commit, and the error is printed above the hook result. The hook runs only at commit time, so `tox -e lint` doesn't need Quarto. CI builds the docs in the Docs workflow instead.
 
 ## Making a change
 
@@ -71,7 +71,8 @@ Code map:
 | `src/hello_world_python_library/cli.py` | The `hello-world` command, built with [click](https://click.palletsprojects.com/) as `hello_world`; entry point `main()` |
 | `src/hello_world_python_library/__main__.py` | Makes `python -m hello_world_python_library` work |
 | `src/hello_world_python_library/py.typed` | Tells type checkers the package ships type hints |
-| `tests/` | The pytest suite, including end-to-end runs of the installed `hello-world` launcher |
+| `skills/hello-world-python-library/` | The agent skill for people who use the library: `SKILL.md` and `references/`. See [The agent skill](#the-agent-skill) |
+| `tests/` | The pytest suite, including end-to-end runs of the installed `hello-world` launcher and checks of the skill inside the installed package |
 | `docs/` | Hand-written documentation pages (Quarto `.qmd` files), shown under "User Guide" on the site |
 | `great-docs.yml` | Great Docs settings. Every option is listed with its default; the uncommented lines are the ones this project changes |
 
@@ -152,6 +153,27 @@ An empty `scan` is expected for now: none of the direct dependencies bundles a s
 
 Each installed skill is a symlink into `.venv`, so it follows upgrades on its own. On Windows, creating symlinks needs Developer Mode. Without it, add `--copy`. library-skills treats a copy as hand-written and never overwrites it, so after an upgrade, delete the copied folders from `.agents/skills/` and `.claude/skills/` and install again.
 
+### The agent skill
+
+The library's own skill, for people who use it, lives in `skills/hello-world-python-library/`. `SKILL.md` is what an agent reads first; it links to the files in `references/` for details. Update the skill in the same commit as any change to the `hello-world` command, the public API or the install instructions.
+
+Users get the skill from that one folder in three ways:
+
+| Install route | How the skill gets there | Configured in |
+| --- | --- | --- |
+| Library Skills, from the installed package | The wheel ships the folder as `hello_world_python_library/.agents/skills/hello-world-python-library/`, where Library Skills looks in installed packages | `[tool.hatch.build.targets.wheel.force-include]` in `pyproject.toml` |
+| `npx skills add <docs site URL>` | Great Docs copies the folder to `.well-known/agent-skills/hello-world-python-library/` on the site, lists its files in `.well-known/agent-skills/index.json`, and shows it on the Skills page | `skill.skills` in `great-docs.yml` |
+| `npx skills add butterlyn/hello-world-python-library` | `npx skills` clones the repository and searches `skills/` | nothing: the folder's location is enough |
+
+The README shows the install commands. Things to know:
+
+- **`name` must equal the folder name**, in lowercase letters, digits and single hyphens. Library Skills skips a skill that breaks this rule. To rename the skill, rename the folder and update `great-docs.yml`, `tests/test_skill.py` and the README.
+- **`description` is at most 1024 characters.** Agents read it to decide when to load the skill, so it names the cases the skill covers.
+- **Keep the `skill.skills` list in `great-docs.yml`.** `skill.file`, and Great Docs' automatic detection of `skills/<package-name>/`, publish `SKILL.md` without `references/`.
+- **`tests/test_skill.py` checks the installed copy**: that the package ships the skill where Library Skills looks, that the frontmatter follows the rules above, and that every relative link leads to a file in the skill. Under tox, that is the copy inside the built wheel.
+- **`uv sync` installs a copy of the skill in `.venv`, not a link**, because the folder is outside the package. The `cache-keys` setting in `pyproject.toml` makes uv reinstall the project whenever a file in `skills/` changes, so `uv run pytest` always checks your current edits.
+- **To see what the docs site publishes**, build the docs and look in `great-docs/_site/.well-known/agent-skills/`.
+
 ### Hook versions
 
 `uv run prek update --freeze` moves every hook repository in `prek.toml` to its latest release, pinned to the exact commit with the tag name in a `# frozen:` comment. Always pass `--freeze`, so the pins stay reproducible. Then run `uv run --locked tox -e lint` and commit with `chore: update prek hook revisions`.
@@ -172,6 +194,7 @@ The site is generated, so most changes need no docs work:
 | User Guide | the `.qmd` and `.md` files in `docs/` |
 | Reference: API | the names in `__all__` and their docstrings |
 | Reference: CLI | the click command `hello_world` in `cli.py`, through its `--help` text |
+| Skills, and the files under `.well-known/agent-skills/` | `skills/hello-world-python-library/` (see [The agent skill](#the-agent-skill)) |
 | Contributing, License | `CONTRIBUTING.md`, `LICENSE` |
 
 - **Adding a page:** add a Quarto `.qmd` file to `docs/`. Python code cells run during the build. `docs/examples.qmd` uses them to show what the command really prints, and sets `freeze: false` so the output is fresh on every build.
@@ -186,8 +209,8 @@ Publishing: on every push to `main`, the Docs workflow builds the site and deplo
 
 [Hatchling](https://hatch.pypa.io/latest/config/build/) builds the wheel and the source distribution. `uv build`, tox and `uv sync` all call it through `[build-system]` in `pyproject.toml`, and its settings are under `[tool.hatch.build]`:
 
-- **The wheel** holds `src/hello_world_python_library/`, which Hatchling finds from the project name.
-- **The source distribution** holds only what `only-include` lists, `src/` and `assets/icon.svg`, plus the files Hatchling always adds: `pyproject.toml`, the README, the license and `.gitignore`. `uv build` builds the wheel from the source distribution, so everything the wheel needs must be in that list. The icon is there so the README renders when the archive is unpacked.
+- **The wheel** holds `src/hello_world_python_library/`, which Hatchling finds from the project name, and the skill, which `force-include` maps from `skills/` into the package (see [The agent skill](#the-agent-skill)).
+- **The source distribution** holds only what `only-include` lists, `src/`, `skills/` and `assets/icon.svg`, plus the files Hatchling always adds: `pyproject.toml`, the README, the license and `.gitignore`. `uv build` builds the wheel from the source distribution, so everything the wheel needs must be in that list. The icon is there so the README renders when the archive is unpacked.
 
 `[build-system]` asks for `hatchling>=1.33.0`, the latest release when the project switched to Hatchling. Each build installs the newest Hatchling that matches, so raise the minimum only when the project needs a newer Hatchling feature.
 

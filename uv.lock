@@ -637,6 +637,7 @@ dev = [
     { name = "library-skills" },
     { name = "prek" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "tox" },
     { name = "tox-uv" },
 ]
@@ -649,6 +650,7 @@ lint = [
 ]
 test = [
     { name = "pytest" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -659,6 +661,7 @@ dev = [
     { name = "library-skills", specifier = ">=0.0.21" },
     { name = "prek", specifier = ">=0.5.11" },
     { name = "pytest", specifier = ">=9.2.0" },
+    { name = "pyyaml", specifier = ">=6.0.4" },
     { name = "tox", specifier = ">=4.67.15" },
     { name = "tox-uv", specifier = ">=1.37.9" },
 ]
@@ -667,7 +670,10 @@ docs = [
     { name = "quarto-cli", specifier = ">=1.11.9" },
 ]
 lint = [{ name = "prek", specifier = ">=0.5.11" }]
-test = [{ name = "pytest", specifier = ">=9.2.0" }]
+test = [
+    { name = "pytest", specifier = ">=9.2.0" },
+    { name = "pyyaml", specifier = ">=6.0.4" },
+]
 
 [[package]]
 name = "httpcore"

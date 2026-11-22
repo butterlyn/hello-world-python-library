@@ -17,20 +17,26 @@ Python 3.11 or newer. It is tested on Python 3.11, 3.12, 3.13, 3.14 and 3.15.
 
 ## Installation
 
-The library is not on PyPI yet, so install it from a copy of this repository. From the repository folder:
+The library is not on PyPI yet, so install it from GitHub:
 
 ```console
-$ uv tool install .
+$ uv tool install git+https://github.com/butterlyn/hello-world-python-library
 ```
 
 That installs `hello-world` into uv's tool folder. If your shell then says the command is not found, run `uv tool update-shell` once and open a new terminal; it adds that folder to your `PATH`.
 
-If you use pip instead, `pip install .` works too.
+If you use pip instead, `pip install git+https://github.com/butterlyn/hello-world-python-library` works too. From a copy of this repository, use `.` in place of the GitHub URL, in either command.
 
 To try the command once without installing anything permanently:
 
 ```console
-$ uvx --from . hello-world
+$ uvx --from git+https://github.com/butterlyn/hello-world-python-library hello-world
+```
+
+To use the library from Python code in a uv project, add it as a dependency:
+
+```console
+$ uv add "hello-world-python-library @ git+https://github.com/butterlyn/hello-world-python-library"
 ```
 
 ## Using the command
@@ -60,6 +66,32 @@ print(greet())  # Hello World.
 ```
 
 The package ships type hints, so type checkers such as mypy understand it.
+
+## Agent skill
+
+The library comes with an [agent skill](https://agentskills.io/) that teaches coding agents, such as Claude Code, Codex or Cursor, how to install and use it. It is one folder: a `SKILL.md` file plus a `references/` folder. Install it in any of these ways:
+
+- **From the installed package, with [Library Skills](https://library-skills.io/).** In a project that depends on this library (see [Installation](#installation)), run this from the project's root folder:
+
+  ```console
+  $ uvx library-skills install --claude --yes --skill hello-world-python-library
+  ```
+
+  That links the skill from the installed package into `.agents/skills/` and, for Claude Code, `.claude/skills/`, so it updates whenever you upgrade the library. Drop `--claude` if you don't use Claude Code. On Windows, creating the links needs Developer Mode; without it, add `--copy`. `uvx library-skills` on its own lets you pick skills from a menu instead.
+
+- **From the documentation site, with [skills](https://github.com/vercel-labs/skills)**, which needs Node.js:
+
+  ```console
+  $ npx skills add https://butterlyn.github.io/hello-world-python-library/
+  ```
+
+- **From GitHub, with skills:**
+
+  ```console
+  $ npx skills add butterlyn/hello-world-python-library
+  ```
+
+`npx skills` asks which agents to install the skill for. Add `-g` to install it for every project on your computer instead of only the current one.
 
 ## Contributing
 
